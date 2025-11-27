@@ -10,7 +10,8 @@ export enum EntityType {
   RAGONDIN = 'RAGONDIN', // Coypu - Hides
   MOUSTIQUE = 'MOUSTIQUE', // Mosquito - Flies over walls
   SANGLIER = 'SANGLIER', // Boar - Aggressive
-  ANGELIQUE = 'ANGELIQUE' // Healing Plant
+  ANGELIQUE = 'ANGELIQUE', // Healing Plant
+  SNAKE = 'SNAKE' // Snake
 }
 
 export interface Position {
@@ -78,6 +79,7 @@ declare global {
       capsuleGeometry: any;
       circleGeometry: any;
       coneGeometry: any;
+      torusGeometry: any;
       [elemName: string]: any;
     }
   }

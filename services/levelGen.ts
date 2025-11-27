@@ -1,6 +1,6 @@
 import { TileType, GRID_SIZE, EntityType, Entity, Position, LevelExit } from '../types';
 import { WORLD_MAP, EXIT_COLORS } from '../constants';
-import { getRandomInt, isWalkable } from './utils';
+import { getRandomInt, isWalkable, isNearWater } from './utils';
 import { v4 as uuidv4 } from 'uuid';
 
 // --- Maze Generator (Recursive Backtracker) ---
@@ -129,28 +129,49 @@ export const generateLevel = (nodeId: string): { grid: TileType[][], playerStart
   const enemies: Entity[] = [];
   const numEnemies = getRandomInt(3, 5);
   for (let i = 0; i < numEnemies; i++) {
-    let pos = { x: getRandomInt(1, GRID_SIZE - 2), y: getRandomInt(1, GRID_SIZE - 2) };
-    // Find valid spot away from player
-    while (
-      !isWalkable(grid, pos) || 
-      (Math.abs(pos.x - playerStart.x) < 5 && Math.abs(pos.y - playerStart.y) < 5)
-    ) {
-      pos = { x: getRandomInt(1, GRID_SIZE - 2), y: getRandomInt(1, GRID_SIZE - 2) };
-    }
-
     const rand = Math.random();
     let type = EntityType.RAGONDIN;
-    if (rand > 0.6) type = EntityType.MOUSTIQUE;
-    if (rand > 0.85) type = EntityType.SANGLIER;
+    if (rand > 0.5) type = EntityType.MOUSTIQUE;
+    if (rand > 0.75) type = EntityType.SANGLIER;
+    if (rand > 0.9) type = EntityType.SNAKE;
 
-    enemies.push({
-      id: uuidv4(),
-      type,
-      position: pos,
-      direction: getRandomInt(0, 3),
-      hp: 1,
-      isHidden: type === EntityType.RAGONDIN && Math.random() > 0.7
-    });
+    // Find valid spot based on Habitat
+    let pos = { x: getRandomInt(1, GRID_SIZE - 2), y: getRandomInt(1, GRID_SIZE - 2) };
+    let validSpot = false;
+    let attempts = 0;
+
+    while (!validSpot && attempts < 100) {
+        attempts++;
+        pos = { x: getRandomInt(1, GRID_SIZE - 2), y: getRandomInt(1, GRID_SIZE - 2) };
+        
+        // Basic check: don't spawn on player
+        if (Math.abs(pos.x - playerStart.x) < 5 && Math.abs(pos.y - playerStart.y) < 5) continue;
+
+        if (type === EntityType.RAGONDIN) {
+            // Must be WATER
+            if (grid[pos.y][pos.x] === TileType.WATER) validSpot = true;
+        } else if (type === EntityType.MOUSTIQUE) {
+            // Must be NEAR WATER
+            if (isNearWater(grid, pos)) validSpot = true;
+        } else if (type === EntityType.SNAKE) {
+            // Can be anywhere walkable (including obstacles for snake)
+            if (isWalkable(grid, pos, EntityType.SNAKE)) validSpot = true;
+        } else {
+            // Sanglier: Land only
+            if (isWalkable(grid, pos, EntityType.SANGLIER) && grid[pos.y][pos.x] !== TileType.WATER) validSpot = true;
+        }
+    }
+
+    if (validSpot) {
+        enemies.push({
+            id: uuidv4(),
+            type,
+            position: pos,
+            direction: getRandomInt(0, 3),
+            hp: 1,
+            isHidden: type === EntityType.RAGONDIN && Math.random() > 0.7
+        });
+    }
   }
 
   // 8. Place Items

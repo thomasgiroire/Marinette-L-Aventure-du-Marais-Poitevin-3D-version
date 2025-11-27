@@ -59,6 +59,7 @@ function App() {
   });
 
   const [attackTrigger, setAttackTrigger] = useState<number>(0);
+  const [isMovingBackwards, setIsMovingBackwards] = useState<boolean>(false);
 
   // Sound effects mock
   const playSound = (type: 'move' | 'attack' | 'hit' | 'win') => {
@@ -102,6 +103,10 @@ function App() {
 
   const handleAction = useCallback((action: 'UP' | 'DOWN' | 'LEFT' | 'RIGHT' | 'ATTACK') => {
     if (gameState.status !== 'PLAYING') return;
+
+    // Visual State Update
+    if (action === 'DOWN') setIsMovingBackwards(true);
+    else setIsMovingBackwards(false);
 
     setGameState(prev => {
       let nextState = { ...prev };
@@ -205,13 +210,7 @@ function App() {
           if (prev.grid[newY][newX] === TileType.EXIT) {
               const exitInfo = prev.levelExits.find(e => e.position.x === newX && e.position.y === newY);
               if (exitInfo) {
-                  // Must use setTimeout to break the render cycle or useEffect, but here we can just do it in next render loop via separate state or special status
-                  // For simplicity in React state reducer, we can't trigger side effect (loadLevel) directly here easily without effects.
-                  // BUT we can set a flag or just do it.
-                  // Since `loadLevel` changes state, we shouldn't call it inside setState.
-                  // We will set a 'TRANSITION' status with metadata and handle it in useEffect.
-                  // Actually, easier: set the state, then in a `useEffect` if on exit, load.
-                  // Let's use a "pendingTransition" approach.
+                   // Logic handled by effect
               }
           }
 
@@ -270,8 +269,19 @@ function App() {
       if (e.key === 'ArrowRight') handleAction('RIGHT');
       if (e.key === ' ') handleAction('ATTACK');
     };
+    
+    // Reset backwards flag on key up if needed, but react handles repeated keys nicely.
+    // For smoother animation reset, we might want keyup listener
+    const handleKeyUp = (e: KeyboardEvent) => {
+        if (e.key === 'ArrowDown') setIsMovingBackwards(false);
+    }
+
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    return () => {
+        window.removeEventListener('keydown', handleKeyDown);
+        window.removeEventListener('keyup', handleKeyUp);
+    };
   }, [handleAction]);
 
   // Touch Controls
@@ -300,7 +310,11 @@ function App() {
   return (
     <div className="relative w-full h-screen bg-gray-900 overflow-hidden select-none">
       <div className="absolute inset-0 z-0">
-         <GameScene gameState={gameState} attackTrigger={attackTrigger} />
+         <GameScene 
+            gameState={gameState} 
+            attackTrigger={attackTrigger} 
+            isMovingBackwards={isMovingBackwards}
+         />
       </div>
 
       <UIOverlay 

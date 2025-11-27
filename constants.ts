@@ -76,4 +76,5 @@ export const ENEMY_STATS = {
   [EntityType.RAGONDIN]: { hp: 1, points: 20 },
   [EntityType.MOUSTIQUE]: { hp: 1, points: 15 },
   [EntityType.SANGLIER]: { hp: 1, points: 30 },
+  [EntityType.SNAKE]: { hp: 1, points: 25 },
 };

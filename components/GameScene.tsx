@@ -10,9 +10,10 @@ import { BoxTile, Tree, Collectible } from './world/WorldObjects';
 interface GameSceneProps {
   gameState: GameState;
   attackTrigger?: number;
+  isMovingBackwards?: boolean;
 }
 
-const GameScene: React.FC<GameSceneProps> = ({ gameState, attackTrigger }) => {
+const GameScene: React.FC<GameSceneProps> = ({ gameState, attackTrigger, isMovingBackwards }) => {
   const { grid, player, enemies, items, levelExits } = gameState;
 
   // Memoize grid rendering
@@ -59,7 +60,12 @@ const GameScene: React.FC<GameSceneProps> = ({ gameState, attackTrigger }) => {
 
       <group>
         {tiles}
-        <Character entity={player} isPlayer attackTrigger={attackTrigger} />
+        <Character 
+            entity={player} 
+            isPlayer 
+            attackTrigger={attackTrigger} 
+            isMovingBackwards={isMovingBackwards}
+        />
         {enemies.map(e => !e.isHidden && <Character key={e.id} entity={e} />)}
         {items.map(i => <Collectible key={i.id} position={[i.position.x, 0, i.position.y]} />)}
       </group>

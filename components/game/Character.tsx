@@ -5,29 +5,40 @@ import { Entity, EntityType } from '../../types';
 import { COLORS } from '../../constants';
 import { MarinetteModel } from '../models/MarinetteModel';
 import { MosquitoModel } from '../models/MosquitoModel';
+import { RagondinModel } from '../models/RagondinModel';
+import { SanglierModel } from '../models/SanglierModel';
+import { SnakeModel } from '../models/SnakeModel';
 
 interface CharacterProps {
     entity: Entity;
     isPlayer?: boolean;
     attackTrigger?: number;
+    isMovingBackwards?: boolean;
 }
 
-export const Character: React.FC<CharacterProps> = ({ entity, isPlayer, attackTrigger }) => {
+export const Character: React.FC<CharacterProps> = ({ entity, isPlayer, attackTrigger, isMovingBackwards }) => {
   const mesh = useRef<THREE.Group>(null);
   const tongueMesh = useRef<THREE.Mesh>(null);
   const targetRotation = useRef(0);
   
   const isMosquito = entity.type === EntityType.MOUSTIQUE;
-  const isBoar = entity.type === EntityType.SANGLIER;
 
   useEffect(() => {
+    let baseRotation = 0;
     switch (entity.direction) {
-        case 0: targetRotation.current = Math.PI; break;
-        case 1: targetRotation.current = Math.PI / 2; break;
-        case 2: targetRotation.current = 0; break;
-        case 3: targetRotation.current = -Math.PI / 2; break;
+        case 0: baseRotation = Math.PI; break;
+        case 1: baseRotation = Math.PI / 2; break;
+        case 2: baseRotation = 0; break;
+        case 3: baseRotation = -Math.PI / 2; break;
     }
-  }, [entity.direction]);
+    
+    // If moving backwards, flip 180 degrees visually (Face the player/screen)
+    if (isPlayer && isMovingBackwards) {
+        baseRotation += Math.PI;
+    }
+
+    targetRotation.current = baseRotation;
+  }, [entity.direction, isPlayer, isMovingBackwards]);
 
   useFrame((state) => {
     if (mesh.current) {
@@ -38,9 +49,15 @@ export const Character: React.FC<CharacterProps> = ({ entity, isPlayer, attackTr
 
       mesh.current.position.y = hoverHeight + Math.sin(state.clock.elapsedTime * hoverSpeed) * hoverAmp;
       
-      // Smooth Rotation
-      let rot = mesh.current.rotation.y;
-      mesh.current.rotation.y = THREE.MathUtils.lerp(rot, targetRotation.current, 0.2);
+      // Shortest Path Rotation Logic
+      let currentRot = mesh.current.rotation.y;
+      let diff = targetRotation.current - currentRot;
+      
+      // Normalize difference to -PI to PI
+      while (diff > Math.PI) diff -= Math.PI * 2;
+      while (diff < -Math.PI) diff += Math.PI * 2;
+
+      mesh.current.rotation.y = THREE.MathUtils.lerp(currentRot, currentRot + diff, 0.2);
     }
 
     // Tongue Animation
@@ -69,11 +86,9 @@ export const Character: React.FC<CharacterProps> = ({ entity, isPlayer, attackTr
     if (entity.type === EntityType.SANGLIER) return '#ef4444'; // Red
     if (entity.type === EntityType.RAGONDIN) return '#92400e'; // Brown
     if (entity.type === EntityType.MOUSTIQUE) return '#94a3b8'; // Gray
+    if (entity.type === EntityType.SNAKE) return '#65a30d'; // Green
     return '#ffffff';
   };
-
-  // Adjust body size: Mosquito uses custom model now, but keeping prop for fallback
-  const bodyRadius = 0.4;
 
   return (
     <group ref={mesh} position={[entity.position.x, 0.5, entity.position.y]}>
@@ -82,24 +97,17 @@ export const Character: React.FC<CharacterProps> = ({ entity, isPlayer, attackTr
         <MarinetteModel color={getColor()} />
       ) : isMosquito ? (
         <MosquitoModel />
+      ) : entity.type === EntityType.RAGONDIN ? (
+        <RagondinModel />
+      ) : entity.type === EntityType.SANGLIER ? (
+        <SanglierModel />
+      ) : entity.type === EntityType.SNAKE ? (
+        <SnakeModel />
       ) : (
-        <>
-            {/* Standard Body for Ragondin / Sanglier */}
-            <mesh castShadow>
-                <sphereGeometry args={[bodyRadius, 32, 32]} />
-                <meshStandardMaterial color={getColor()} />
-            </mesh>
-            
-            {/* Tail for Boar (Sanglier) */}
-            {isBoar && (
-                <group position={[0, 0, -0.35]} rotation={[0.5, 0, 0]}>
-                <mesh>
-                    <cylinderGeometry args={[0.03, 0.05, 0.2, 8]} />
-                    <meshStandardMaterial color={getColor()} />
-                </mesh>
-                </group>
-            )}
-        </>
+        <mesh castShadow>
+             <sphereGeometry args={[0.4, 32, 32]} />
+             <meshStandardMaterial color={getColor()} />
+        </mesh>
       )}
 
       {/* Tongue (Player Only) */}
