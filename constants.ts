@@ -46,7 +46,7 @@ export const WORLD_MAP: Record<string, LocationNode> = {
     connections: [], 
     isFinal: true,
     legend: "L'Esprit des Estuaires",
-    theme: "L'équilibre fragile de l'écotone."
+    theme: "Je veille sur la rencontre des eaux. Le marais filtre les pollutions et protège l'océan, garantissant un refuge vital pour la biodiversité."
   },
   'esnandes': { 
     id: 'esnandes', 
@@ -54,7 +54,7 @@ export const WORLD_MAP: Record<string, LocationNode> = {
     connections: [], 
     isFinal: true,
     legend: "L'Assemblée des Huîtres",
-    theme: "La pureté de l'eau nécessaire à la survie."
+    theme: "Nous sommes les sentinelles de l'eau. Grâce au marais qui retient les sédiments, le littoral reste pur et nos coquilles prospèrent."
   },
   'charron': { 
     id: 'charron', 
@@ -62,7 +62,7 @@ export const WORLD_MAP: Record<string, LocationNode> = {
     connections: ['marans', 'esnandes'], 
     isFinal: true,
     legend: "La Fée Mélusine",
-    theme: "La préservation de l'identité du marais."
+    theme: "Je garde la mémoire des canaux. Ce labyrinthe hydraulique régule les inondations et préserve l'eau douce essentielle à toute vie."
   },
   
   // Connectors to finals (Simplified graph for playability to ensure reachability)

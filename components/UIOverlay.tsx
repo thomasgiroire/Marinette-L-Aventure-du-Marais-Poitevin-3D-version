@@ -1,7 +1,7 @@
 import React from 'react';
 import { GameState } from '../types';
 import { WORLD_MAP } from '../constants';
-import { Heart, Map, Skull } from 'lucide-react';
+import { Heart, Map, Skull, Share2, RotateCcw } from 'lucide-react';
 
 interface UIProps {
   state: GameState;
@@ -13,35 +13,81 @@ interface UIProps {
 const UIOverlay: React.FC<UIProps> = ({ state, onRestart }) => {
   const location = WORLD_MAP[state.currentLocationId];
 
+  const handleShare = async () => {
+    const shareData = {
+      title: "Marinette: L'Aventure du Marais Poitevin",
+      text: `J'ai découvert la légende "${location.legend}" à ${location.name} avec un score de ${state.score} ! 🐸✨ #MaraisPoitevin`,
+      url: window.location.href
+    };
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+      } catch (err) {
+        // Share cancelled
+      }
+    } else {
+       // Fallback
+       try {
+        await navigator.clipboard.writeText(`${shareData.text} ${shareData.url}`);
+        alert("Résultat copié dans le presse-papier !");
+       } catch (e) {
+        alert("Partage non supporté sur cet appareil.");
+       }
+    }
+  };
+
   // Win/Loss Screen
   if (state.status === 'LOST' || state.status === 'WON') {
     return (
-      <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-        <div className="bg-[#fef3c7] p-8 rounded-lg shadow-2xl max-w-2xl w-full border-4 border-[#8b5cf6] font-hand text-center">
-          <h1 className="text-4xl font-bold mb-4 text-[#4c1d95]">
+      <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4">
+        {/* Victory/Loss Modal matching the visual design of the screenshot */}
+        <div className="relative bg-[#fffac8] p-8 rounded-xl shadow-[0_0_20px_rgba(0,0,0,0.3)] max-w-lg w-full border-[6px] border-[#a855f7] flex flex-col items-center text-center">
+          
+          <h1 className="font-hand text-4xl font-bold mb-6 text-[#7e22ce]">
             {state.status === 'WON' ? 'Légende Découverte !' : 'Voyage Terminé'}
           </h1>
           
           {state.status === 'WON' ? (
-            <div className="space-y-4">
-              <p className="text-2xl text-green-700 font-bold">{location.legend}</p>
-              <p className="text-xl italic">{location.theme}</p>
-              <p className="text-lg">Score Final: {state.score}</p>
+            <div className="space-y-4 mb-8 w-full">
+              <p className="font-hand text-3xl font-bold text-[#15803d]">
+                {location.legend}
+              </p>
+              {/* Added drop-shadow to white text to ensure readability on light background as requested by 'On arrive pas à lire' */}
+              <p className="font-hand text-xl italic text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] px-4 leading-relaxed">
+                {location.theme}
+              </p>
+              <p className="font-hand text-lg text-white font-bold drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] mt-4">
+                Score Final: {state.score}
+              </p>
             </div>
           ) : (
-            <div className="space-y-4">
-              <Skull className="w-16 h-16 mx-auto text-gray-500" />
-              <p className="text-xl">Marinette est trop fatiguée pour continuer.</p>
-              <p className="text-lg">Score Final: {state.score}</p>
+            <div className="space-y-4 mb-8">
+              <Skull className="w-20 h-20 mx-auto text-gray-500 mb-4" />
+              <p className="font-hand text-2xl text-gray-700">Marinette est trop fatiguée.</p>
+              <p className="font-hand text-lg text-gray-600">Score Final: {state.score}</p>
             </div>
           )}
 
-          <button 
-            onClick={onRestart}
-            className="mt-8 px-8 py-3 bg-[#ec4899] text-white rounded-full font-bold text-xl hover:bg-[#db2777] transition-transform hover:scale-105"
-          >
-            Retourner à Coulon
-          </button>
+          <div className="flex flex-col sm:flex-row gap-4 w-full justify-center">
+            <button 
+              onClick={onRestart}
+              className="flex items-center justify-center gap-2 px-8 py-3 bg-[#ec4899] text-white rounded-full font-hand font-bold text-xl shadow-lg hover:bg-[#db2777] transition-transform hover:scale-105 active:scale-95"
+            >
+              <RotateCcw size={24} />
+              Rejouer
+            </button>
+            
+            {state.status === 'WON' && (
+              <button 
+                onClick={handleShare}
+                className="flex items-center justify-center gap-2 px-8 py-3 bg-[#3b82f6] text-white rounded-full font-hand font-bold text-xl shadow-lg hover:bg-[#2563eb] transition-transform hover:scale-105 active:scale-95"
+              >
+                <Share2 size={24} />
+                Partager
+              </button>
+            )}
+          </div>
         </div>
       </div>
     );

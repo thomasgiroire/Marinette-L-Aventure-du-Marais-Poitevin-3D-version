@@ -60,3 +60,25 @@ export interface LocationNode {
 }
 
 export const GRID_SIZE = 21;
+
+// Global Type Definitions for R3F
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      ambientLight: any;
+      directionalLight: any;
+      mesh: any;
+      group: any;
+      boxGeometry: any;
+      meshStandardMaterial: any;
+      cylinderGeometry: any;
+      dodecahedronGeometry: any;
+      sphereGeometry: any;
+      octahedronGeometry: any;
+      capsuleGeometry: any;
+      circleGeometry: any;
+      coneGeometry: any;
+      [elemName: string]: any;
+    }
+  }
+}
