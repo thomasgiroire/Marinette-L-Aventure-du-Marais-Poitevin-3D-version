@@ -13,10 +13,10 @@ interface CharacterProps {
     entity: Entity;
     isPlayer?: boolean;
     attackTrigger?: number;
-    isMovingBackwards?: boolean;
+    isFacingCamera?: boolean;
 }
 
-export const Character: React.FC<CharacterProps> = ({ entity, isPlayer, attackTrigger, isMovingBackwards }) => {
+export const Character: React.FC<CharacterProps> = ({ entity, isPlayer, attackTrigger, isFacingCamera }) => {
   const mesh = useRef<THREE.Group>(null);
   const tongueMesh = useRef<THREE.Mesh>(null);
   const targetRotation = useRef(0);
@@ -32,13 +32,13 @@ export const Character: React.FC<CharacterProps> = ({ entity, isPlayer, attackTr
         case 3: baseRotation = -Math.PI / 2; break;
     }
     
-    // If moving backwards, flip 180 degrees visually (Face the player/screen)
-    if (isPlayer && isMovingBackwards) {
+    // If facing camera (Backwards key was pressed last), flip 180 degrees visually
+    if (isPlayer && isFacingCamera) {
         baseRotation += Math.PI;
     }
 
     targetRotation.current = baseRotation;
-  }, [entity.direction, isPlayer, isMovingBackwards]);
+  }, [entity.direction, isPlayer, isFacingCamera]);
 
   useFrame((state) => {
     if (mesh.current) {

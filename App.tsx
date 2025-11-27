@@ -59,7 +59,7 @@ function App() {
   });
 
   const [attackTrigger, setAttackTrigger] = useState<number>(0);
-  const [isMovingBackwards, setIsMovingBackwards] = useState<boolean>(false);
+  const [isFacingCamera, setIsFacingCamera] = useState<boolean>(false);
 
   // Sound effects mock
   const playSound = (type: 'move' | 'attack' | 'hit' | 'win') => {
@@ -104,9 +104,12 @@ function App() {
   const handleAction = useCallback((action: 'UP' | 'DOWN' | 'LEFT' | 'RIGHT' | 'ATTACK') => {
     if (gameState.status !== 'PLAYING') return;
 
-    // Visual State Update
-    if (action === 'DOWN') setIsMovingBackwards(true);
-    else setIsMovingBackwards(false);
+    // Visual State Update: DOWN means we face the camera. Any other movement resets this.
+    if (action === 'DOWN') {
+        setIsFacingCamera(true);
+    } else if (action === 'UP' || action === 'LEFT' || action === 'RIGHT') {
+        setIsFacingCamera(false);
+    }
 
     setGameState(prev => {
       let nextState = { ...prev };
@@ -128,6 +131,7 @@ function App() {
       if (action === 'ATTACK') {
         playSound('attack');
         setAttackTrigger(Date.now()); // Trigger visual animation
+        setIsFacingCamera(false); // Reset facing on attack
         
         // Tongue Logic: Attack in front of player
         let tx = prev.player.position.x;
@@ -270,17 +274,9 @@ function App() {
       if (e.key === ' ') handleAction('ATTACK');
     };
     
-    // Reset backwards flag on key up if needed, but react handles repeated keys nicely.
-    // For smoother animation reset, we might want keyup listener
-    const handleKeyUp = (e: KeyboardEvent) => {
-        if (e.key === 'ArrowDown') setIsMovingBackwards(false);
-    }
-
     window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('keyup', handleKeyUp);
     return () => {
         window.removeEventListener('keydown', handleKeyDown);
-        window.removeEventListener('keyup', handleKeyUp);
     };
   }, [handleAction]);
 
@@ -313,7 +309,7 @@ function App() {
          <GameScene 
             gameState={gameState} 
             attackTrigger={attackTrigger} 
-            isMovingBackwards={isMovingBackwards}
+            isFacingCamera={isFacingCamera}
          />
       </div>
 

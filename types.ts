@@ -27,6 +27,7 @@ export interface Entity {
   hp: number;
   isHidden?: boolean; // For Ragondin
   cooldown?: number;
+  aggroTurns?: number; // For Sanglier chase duration
 }
 
 export interface LevelExit {

@@ -29,14 +29,26 @@ export const moveEnemies = (gameState: GameState): GameState => {
     // AI BEHAVIOR DEFINITIONS
     if (enemy.type === EntityType.SANGLIER) {
         // --- SANGLIER (Boar) ---
-        // Passive: Random patrol on Land
-        // Aggressive: If dist < 5 (UPDATED), chase player.
+        // Trigger Aggro if close
+        let isAngry = (enemy.aggroTurns || 0) > 0;
+        
         if (dist < 5) {
+            // Trigger or refresh anger
+            enemy.aggroTurns = 5;
+            isAngry = true;
+        }
+
+        if (isAngry) {
              // Aggressive Chase
              if (pPos.x > enemy.position.x) moveX = 1;
              else if (pPos.x < enemy.position.x) moveX = -1;
              else if (pPos.y > enemy.position.y) moveY = 1;
              else if (pPos.y < enemy.position.y) moveY = -1;
+             
+             // Decrement anger
+             if (enemy.aggroTurns && enemy.aggroTurns > 0) {
+                 enemy.aggroTurns--;
+             }
         } else {
              // Passive Random
              const move = getRandomInt(0, 4);
@@ -66,7 +78,7 @@ export const moveEnemies = (gameState: GameState): GameState => {
     }
     else {
         // --- RAGONDIN (Coypu) ---
-        // Random move, but strictly restricted to WATER later in validation
+        // Random move, but strictly restricted to WATER or Bank later in validation
         const move = getRandomInt(0, 4);
         if (move === 0) moveX = 1;
         else if (move === 1) moveX = -1;
@@ -93,8 +105,12 @@ export const moveEnemies = (gameState: GameState): GameState => {
     // 2. Habitat Constraints
     if (valid) {
         if (enemy.type === EntityType.RAGONDIN) {
-            // Strictly WATER only
-            if (gameState.grid[proposedPos.y][proposedPos.x] !== TileType.WATER) {
+            // WATER or Bank (Near Water) BUT NOT OBSTACLE
+            const isWater = gameState.grid[proposedPos.y][proposedPos.x] === TileType.WATER;
+            const isBank = isNearWater(gameState.grid, proposedPos);
+            const isTree = gameState.grid[proposedPos.y][proposedPos.x] === TileType.OBSTACLE;
+            
+            if (isTree || (!isWater && !isBank)) {
                 valid = false;
             }
         } 

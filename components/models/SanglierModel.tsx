@@ -21,6 +21,16 @@ export const SanglierModel = () => {
          <meshStandardMaterial color="#fca5a5" /> {/* Pinkish snout */}
       </mesh>
 
+      {/* Ears */}
+      <mesh position={[0.15, 0.45, 0.3]} rotation={[0, 0, -0.4]}>
+         <coneGeometry args={[0.04, 0.12, 8]} />
+         <meshStandardMaterial color="#4b5563" />
+      </mesh>
+      <mesh position={[-0.15, 0.45, 0.3]} rotation={[0, 0, 0.4]}>
+         <coneGeometry args={[0.04, 0.12, 8]} />
+         <meshStandardMaterial color="#4b5563" />
+      </mesh>
+
       {/* Tusks */}
       <mesh position={[0.12, 0.25, 0.45]} rotation={[-0.5, 0, 0.3]}>
          <coneGeometry args={[0.03, 0.15, 8]} />

@@ -10,10 +10,10 @@ import { BoxTile, Tree, Collectible } from './world/WorldObjects';
 interface GameSceneProps {
   gameState: GameState;
   attackTrigger?: number;
-  isMovingBackwards?: boolean;
+  isFacingCamera?: boolean;
 }
 
-const GameScene: React.FC<GameSceneProps> = ({ gameState, attackTrigger, isMovingBackwards }) => {
+const GameScene: React.FC<GameSceneProps> = ({ gameState, attackTrigger, isFacingCamera }) => {
   const { grid, player, enemies, items, levelExits } = gameState;
 
   // Memoize grid rendering
@@ -64,7 +64,7 @@ const GameScene: React.FC<GameSceneProps> = ({ gameState, attackTrigger, isMovin
             entity={player} 
             isPlayer 
             attackTrigger={attackTrigger} 
-            isMovingBackwards={isMovingBackwards}
+            isFacingCamera={isFacingCamera}
         />
         {enemies.map(e => !e.isHidden && <Character key={e.id} entity={e} />)}
         {items.map(i => <Collectible key={i.id} position={[i.position.x, 0, i.position.y]} />)}
