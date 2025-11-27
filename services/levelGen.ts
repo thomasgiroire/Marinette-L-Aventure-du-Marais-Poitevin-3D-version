@@ -1,5 +1,5 @@
 import { TileType, GRID_SIZE, EntityType, Entity, Position, LevelExit } from '../types';
-import { WORLD_MAP, EXIT_COLORS } from '../constants';
+import { WORLD_MAP, EXIT_COLORS, STARTING_NODE } from '../constants';
 import { getRandomInt, isWalkable, isNearWater } from './utils';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -127,14 +127,25 @@ export const generateLevel = (nodeId: string): { grid: TileType[][], playerStart
 
   // 7. Place Enemies
   const enemies: Entity[] = [];
-  const numEnemies = getRandomInt(3, 5);
-  for (let i = 0; i < numEnemies; i++) {
-    const rand = Math.random();
-    let type = EntityType.RAGONDIN;
-    if (rand > 0.5) type = EntityType.MOUSTIQUE;
-    if (rand > 0.75) type = EntityType.SANGLIER;
-    if (rand > 0.9) type = EntityType.SNAKE;
+  let enemyTypesToSpawn: EntityType[] = [];
 
+  if (nodeId === STARTING_NODE) {
+      // Force one of each species for the starting level
+      enemyTypesToSpawn = [EntityType.RAGONDIN, EntityType.MOUSTIQUE, EntityType.SANGLIER, EntityType.SNAKE];
+  } else {
+      // Random generation for other levels
+      const numEnemies = getRandomInt(3, 5);
+      for (let i = 0; i < numEnemies; i++) {
+        const rand = Math.random();
+        let type = EntityType.RAGONDIN;
+        if (rand > 0.5) type = EntityType.MOUSTIQUE;
+        if (rand > 0.75) type = EntityType.SANGLIER;
+        if (rand > 0.9) type = EntityType.SNAKE;
+        enemyTypesToSpawn.push(type);
+      }
+  }
+
+  for (const type of enemyTypesToSpawn) {
     // Find valid spot based on Habitat
     let pos = { x: getRandomInt(1, GRID_SIZE - 2), y: getRandomInt(1, GRID_SIZE - 2) };
     let validSpot = false;
@@ -146,6 +157,9 @@ export const generateLevel = (nodeId: string): { grid: TileType[][], playerStart
         
         // Basic check: don't spawn on player
         if (Math.abs(pos.x - playerStart.x) < 5 && Math.abs(pos.y - playerStart.y) < 5) continue;
+        
+        // Don't spawn on top of another enemy
+        if (enemies.some(e => e.position.x === pos.x && e.position.y === pos.y)) continue;
 
         if (type === EntityType.RAGONDIN) {
             // Must be WATER
