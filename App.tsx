@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { GameState, EntityType, TileType, GRID_SIZE, CameraMode } from './types';
-import { WORLD_MAP, STARTING_NODE, ENEMY_STATS } from './constants';
+import { GameState, EntityType, TileType, GRID_SIZE, CameraMode, ParticleBurst, EffectType, Position } from './types';
+import { WORLD_MAP, STARTING_NODE, ENEMY_STATS, COLORS } from './constants';
 import { generateLevel, moveEnemies } from './services/gameLogic';
 import GameScene from './components/GameScene';
 import UIOverlay from './components/UIOverlay';
+import { v4 as uuidv4 } from 'uuid';
 
 // Simple Swipe Detection Hook
 const useSwipe = (onSwipe: (dir: string) => void, onTap: () => void) => {
@@ -61,11 +62,27 @@ function App() {
   const [attackTrigger, setAttackTrigger] = useState<number>(0);
   const [isFacingCamera, setIsFacingCamera] = useState<boolean>(false);
   const [cameraMode, setCameraMode] = useState<CameraMode>('FPS');
+  const [particleBursts, setParticleBursts] = useState<ParticleBurst[]>([]);
 
   // Sound effects mock
   const playSound = (type: 'move' | 'attack' | 'hit' | 'win') => {
     // console.log(`Playing Sound: ${type}`); 
   };
+
+  const addBurst = useCallback((type: EffectType, position: Position, color?: string) => {
+      const newBurst: ParticleBurst = {
+          id: uuidv4(),
+          type,
+          position,
+          color
+      };
+      setParticleBursts(prev => [...prev, newBurst]);
+      
+      // Cleanup old bursts
+      setTimeout(() => {
+          setParticleBursts(prev => prev.filter(b => b.id !== newBurst.id));
+      }, 1500);
+  }, []);
 
   // Define loadLevel first so it can be used in handleAction
   const loadLevel = useCallback((nodeId: string) => {
@@ -133,6 +150,9 @@ function App() {
         playSound('attack');
         setAttackTrigger(Date.now()); // Trigger visual animation
         
+        // Attack FX
+        addBurst(EffectType.ATTACK, prev.player.position);
+
         // Tongue Logic: Attack in front of player
         let tx = prev.player.position.x;
         let ty = prev.player.position.y;
@@ -151,6 +171,9 @@ function App() {
             // Hit check
             const target = nextState.enemies.find(e => e.position.x === tx && e.position.y === ty);
             if (target) {
+                 // Hit FX
+                 addBurst(EffectType.HIT, target.position);
+
                  if (target.type === EntityType.SANGLIER) {
                     // Push back
                     let px = 0, py = 0;
@@ -214,6 +237,11 @@ function App() {
           playSound('move');
           playerMoved = true;
           
+          // Splash FX if entering water
+          if (prev.grid[newY][newX] === TileType.WATER) {
+              addBurst(EffectType.SPLASH, { x: newX, y: newY });
+          }
+
           // Check Exit Logic
           if (prev.grid[newY][newX] === TileType.EXIT) {
               const exitInfo = prev.levelExits.find(e => e.position.x === newX && e.position.y === newY);
@@ -230,6 +258,8 @@ function App() {
                  nextState.lives = Math.min(3, nextState.lives + 1);
                  nextState.items.splice(itemIndex, 1);
                  playSound('win');
+                 // Collect FX
+                 addBurst(EffectType.COLLECT, {x: newX, y: newY});
              }
           }
         }
@@ -242,6 +272,9 @@ function App() {
         const hitEnemy = nextState.enemies.find(e => e.position.x === nextState.player.position.x && e.position.y === nextState.player.position.y);
         if (hitEnemy) {
             playSound('hit');
+            // Hit FX on Player
+            addBurst(EffectType.HIT, nextState.player.position, '#ef4444');
+            
             nextState.lives -= 1;
             nextState.enemies = nextState.enemies.filter(e => e.id !== hitEnemy.id);
             if (nextState.lives <= 0) nextState.status = 'LOST';
@@ -250,7 +283,7 @@ function App() {
 
       return nextState;
     });
-  }, [gameState.status, loadLevel]);
+  }, [gameState.status, loadLevel, addBurst]);
 
   // Effect to handle instant level loading when stepping on an exit
   useEffect(() => {
@@ -319,6 +352,7 @@ function App() {
             attackTrigger={attackTrigger} 
             isFacingCamera={cameraMode === 'TPS' && isFacingCamera} // Only apply "face camera" rotation in TPS
             cameraMode={cameraMode}
+            particleBursts={particleBursts}
          />
       </div>
 

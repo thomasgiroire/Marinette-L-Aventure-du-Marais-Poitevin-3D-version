@@ -14,6 +14,13 @@ export enum EntityType {
   SNAKE = 'SNAKE' // Snake
 }
 
+export enum EffectType {
+  SPLASH = 'SPLASH',
+  HIT = 'HIT',
+  COLLECT = 'COLLECT',
+  ATTACK = 'ATTACK'
+}
+
 export type CameraMode = 'FPS' | 'TPS';
 
 export interface Position {
@@ -36,6 +43,13 @@ export interface LevelExit {
   position: Position;
   destinationId: string;
   color: string;
+}
+
+export interface ParticleBurst {
+  id: string;
+  type: EffectType;
+  position: Position;
+  color?: string;
 }
 
 export interface GameState {
