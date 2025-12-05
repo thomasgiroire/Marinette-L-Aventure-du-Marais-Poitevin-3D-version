@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { GameState, EntityType, TileType, GRID_SIZE } from './types';
+import { GameState, EntityType, TileType, GRID_SIZE, CameraMode } from './types';
 import { WORLD_MAP, STARTING_NODE, ENEMY_STATS } from './constants';
 import { generateLevel, moveEnemies } from './services/gameLogic';
 import GameScene from './components/GameScene';
@@ -60,6 +60,7 @@ function App() {
 
   const [attackTrigger, setAttackTrigger] = useState<number>(0);
   const [isFacingCamera, setIsFacingCamera] = useState<boolean>(false);
+  const [cameraMode, setCameraMode] = useState<CameraMode>('FPS');
 
   // Sound effects mock
   const playSound = (type: 'move' | 'attack' | 'hit' | 'win') => {
@@ -104,19 +105,19 @@ function App() {
   const handleAction = useCallback((action: 'UP' | 'DOWN' | 'LEFT' | 'RIGHT' | 'ATTACK') => {
     if (gameState.status !== 'PLAYING') return;
 
-    // Visual State Update: DOWN means we face the camera. Any other movement resets this.
-    if (action === 'DOWN') {
-        setIsFacingCamera(true);
-    } else if (action === 'UP' || action === 'LEFT' || action === 'RIGHT') {
-        setIsFacingCamera(false);
-    }
-
     setGameState(prev => {
       let nextState = { ...prev };
       let playerMoved = false;
 
+      // Update orientation state based on key press (only relevant for TPS visuals)
+      if (action === 'DOWN') {
+          setIsFacingCamera(true);
+      } else if (['UP', 'LEFT', 'RIGHT', 'ATTACK'].includes(action)) {
+          setIsFacingCamera(false);
+      }
+
       // --- TANK CONTROLS ---
-      // UP = Forward, DOWN = Backward, LEFT/RIGHT = Rotate
+      // UP = Forward, DOWN = Backward, LEFT/RIGHT = Rotate Camera
       
       if (action === 'LEFT') {
         nextState.player.direction = (prev.player.direction + 3) % 4; // Rotate Counter-Clockwise
@@ -131,7 +132,6 @@ function App() {
       if (action === 'ATTACK') {
         playSound('attack');
         setAttackTrigger(Date.now()); // Trigger visual animation
-        setIsFacingCamera(false); // Reset facing on attack
         
         // Tongue Logic: Attack in front of player
         let tx = prev.player.position.x;
@@ -139,6 +139,10 @@ function App() {
         
         // Range 2
         for(let i=0; i<2; i++) {
+            // Direction 0: North (-Y)
+            // Direction 1: East (+X)
+            // Direction 2: South (+Y)
+            // Direction 3: West (-X)
             if (prev.player.direction === 0) ty -= 1;
             if (prev.player.direction === 1) tx += 1;
             if (prev.player.direction === 2) ty += 1;
@@ -185,7 +189,7 @@ function App() {
 
         const currentTile = prev.grid[prev.player.position.y][prev.player.position.x];
         let steps = 1;
-        // Water acceleration
+        // Water acceleration (Only on forward)
         if (currentTile === TileType.WATER && isForward) steps = 2;
 
         let newX = prev.player.position.x;
@@ -303,21 +307,28 @@ function App() {
       });
   };
 
+  const toggleCameraMode = () => {
+      setCameraMode(prev => prev === 'FPS' ? 'TPS' : 'FPS');
+  };
+
   return (
     <div className="relative w-full h-screen bg-gray-900 overflow-hidden select-none">
       <div className="absolute inset-0 z-0">
          <GameScene 
             gameState={gameState} 
             attackTrigger={attackTrigger} 
-            isFacingCamera={isFacingCamera}
+            isFacingCamera={cameraMode === 'TPS' && isFacingCamera} // Only apply "face camera" rotation in TPS
+            cameraMode={cameraMode}
          />
       </div>
 
       <UIOverlay 
         state={gameState} 
         onRestart={restartGame}
-        onExitSelect={() => {}} // No longer used
-        availableExits={[]} // No longer used
+        onExitSelect={() => {}} 
+        availableExits={[]}
+        cameraMode={cameraMode}
+        onToggleCamera={toggleCameraMode}
       />
     </div>
   );

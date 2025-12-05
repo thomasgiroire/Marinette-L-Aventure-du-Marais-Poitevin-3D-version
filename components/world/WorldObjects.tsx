@@ -4,7 +4,13 @@ import * as THREE from 'three';
 import { TileType } from '../../types';
 import { COLORS } from '../../constants';
 
-export const BoxTile = ({ position, color, type }: { position: [number, number, number], color: string, type: TileType }) => {
+interface BoxTileProps {
+  position: [number, number, number];
+  color: string;
+  type: TileType;
+}
+
+export const BoxTile: React.FC<BoxTileProps> = ({ position, color, type }) => {
   const mesh = useRef<THREE.Mesh>(null);
   
   // Subtle animation for water
@@ -27,7 +33,11 @@ export const BoxTile = ({ position, color, type }: { position: [number, number, 
   );
 };
 
-export const Tree = ({ position }: { position: [number, number, number] }) => (
+interface TreeProps {
+  position: [number, number, number];
+}
+
+export const Tree: React.FC<TreeProps> = ({ position }) => (
   <group position={position}>
     <mesh position={[0, 0.5, 0]}>
       <cylinderGeometry args={[0.1, 0.2, 1, 8]} />
@@ -40,7 +50,11 @@ export const Tree = ({ position }: { position: [number, number, number] }) => (
   </group>
 );
 
-export const Collectible = ({ position }: { position: [number, number, number] }) => {
+interface CollectibleProps {
+  position: [number, number, number];
+}
+
+export const Collectible: React.FC<CollectibleProps> = ({ position }) => {
     const ref = useRef<THREE.Group>(null);
     useFrame((state) => {
         if(ref.current) ref.current.rotation.y += 0.02;

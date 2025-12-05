@@ -1,16 +1,18 @@
 import React from 'react';
-import { GameState } from '../types';
+import { GameState, CameraMode } from '../types';
 import { WORLD_MAP } from '../constants';
-import { Heart, Map, Skull, Share2, RotateCcw } from 'lucide-react';
+import { Heart, Map, Skull, Share2, RotateCcw, Eye } from 'lucide-react';
 
 interface UIProps {
   state: GameState;
   onRestart: () => void;
   onExitSelect: (nodeId: string) => void;
   availableExits: string[];
+  cameraMode: CameraMode;
+  onToggleCamera: () => void;
 }
 
-const UIOverlay: React.FC<UIProps> = ({ state, onRestart }) => {
+const UIOverlay: React.FC<UIProps> = ({ state, onRestart, cameraMode, onToggleCamera }) => {
   const location = WORLD_MAP[state.currentLocationId];
 
   const handleShare = async () => {
@@ -113,7 +115,7 @@ const UIOverlay: React.FC<UIProps> = ({ state, onRestart }) => {
       </div>
 
       {/* Right Side: Explorer's Notebook (Context) */}
-      <div className="absolute top-20 right-4 w-64 h-[calc(100%-6rem)] bg-[#fef3c7] rounded-lg shadow-xl border-l-8 border-[#92400e] transform rotate-1 origin-top-right hidden md:block overflow-y-auto font-hand p-4">
+      <div className="absolute top-20 right-4 w-64 h-[calc(100%-6rem)] bg-[#fef3c7] rounded-lg shadow-xl border-l-8 border-[#92400e] transform rotate-1 origin-top-right hidden md:block overflow-y-auto font-hand p-4 pointer-events-auto">
         <h3 className="text-xl font-bold border-b-2 border-[#92400e] mb-2 pb-1 text-[#92400e] flex items-center gap-2">
           <Map className="w-5 h-5" />
           {location.name}
@@ -121,6 +123,15 @@ const UIOverlay: React.FC<UIProps> = ({ state, onRestart }) => {
         <p className="text-sm text-gray-700 leading-relaxed mb-4">
           Trouvez la sortie vers votre prochaine destination.
         </p>
+        
+        {/* Camera Toggle Button */}
+        <button 
+            onClick={onToggleCamera}
+            className="w-full flex items-center justify-center gap-2 bg-[#92400e] text-white py-2 rounded mb-4 shadow hover:bg-[#78350f] transition-colors font-bold text-sm"
+        >
+            <Eye size={16} />
+            Vue: {cameraMode === 'FPS' ? '1ère Personne' : '3ème Personne'}
+        </button>
         
         <div className="mt-4 border-t-2 border-[#92400e] pt-2">
           {/* Legend: Font Arial, Color Black */}

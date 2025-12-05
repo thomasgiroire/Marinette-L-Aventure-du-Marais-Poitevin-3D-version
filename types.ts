@@ -14,6 +14,8 @@ export enum EntityType {
   SNAKE = 'SNAKE' // Snake
 }
 
+export type CameraMode = 'FPS' | 'TPS';
+
 export interface Position {
   x: number;
   y: number;

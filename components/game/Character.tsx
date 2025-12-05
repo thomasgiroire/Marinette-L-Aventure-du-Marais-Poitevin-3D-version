@@ -1,7 +1,7 @@
 import React, { useRef, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
-import { Entity, EntityType } from '../../types';
+import { Entity, EntityType, CameraMode } from '../../types';
 import { COLORS } from '../../constants';
 import { MarinetteModel } from '../models/MarinetteModel';
 import { MosquitoModel } from '../models/MosquitoModel';
@@ -14,9 +14,10 @@ interface CharacterProps {
     isPlayer?: boolean;
     attackTrigger?: number;
     isFacingCamera?: boolean;
+    cameraMode?: CameraMode;
 }
 
-export const Character: React.FC<CharacterProps> = ({ entity, isPlayer, attackTrigger, isFacingCamera }) => {
+export const Character: React.FC<CharacterProps> = ({ entity, isPlayer, attackTrigger, isFacingCamera, cameraMode }) => {
   const mesh = useRef<THREE.Group>(null);
   const tongueMesh = useRef<THREE.Mesh>(null);
   const targetRotation = useRef(0);
@@ -32,31 +33,29 @@ export const Character: React.FC<CharacterProps> = ({ entity, isPlayer, attackTr
         case 3: baseRotation = -Math.PI / 2; break;
     }
     
-    // If facing camera (Backwards key was pressed last), flip 180 degrees visually
-    if (isPlayer && isFacingCamera) {
+    // 180 Rotation on Backwards (Only applies in TPS mode via isFacingCamera prop)
+    if (isFacingCamera) {
         baseRotation += Math.PI;
     }
-
+    
     targetRotation.current = baseRotation;
   }, [entity.direction, isPlayer, isFacingCamera]);
 
   useFrame((state) => {
     if (mesh.current) {
-      // Bobbing animation
-      const hoverSpeed = isMosquito ? 10 : 4;
-      const hoverHeight = isMosquito ? 0.8 : 0.5; // Mosquitos fly higher
-      const hoverAmp = isMosquito ? 0.15 : 0.1;
-
-      mesh.current.position.y = hoverHeight + Math.sin(state.clock.elapsedTime * hoverSpeed) * hoverAmp;
+      // Bobbing animation (only for enemies or player in TPS)
+      if (!isPlayer || cameraMode === 'TPS') {
+          const hoverSpeed = isMosquito ? 10 : 4;
+          const hoverHeight = isMosquito ? 0.8 : 0.5;
+          const hoverAmp = isMosquito ? 0.15 : 0.1;
+          mesh.current.position.y = hoverHeight + Math.sin(state.clock.elapsedTime * hoverSpeed) * hoverAmp;
+      }
       
-      // Shortest Path Rotation Logic
+      // Rotation Logic
       let currentRot = mesh.current.rotation.y;
       let diff = targetRotation.current - currentRot;
-      
-      // Normalize difference to -PI to PI
       while (diff > Math.PI) diff -= Math.PI * 2;
       while (diff < -Math.PI) diff += Math.PI * 2;
-
       mesh.current.rotation.y = THREE.MathUtils.lerp(currentRot, currentRot + diff, 0.2);
     }
 
@@ -69,12 +68,22 @@ export const Character: React.FC<CharacterProps> = ({ entity, isPlayer, attackTr
         if (elapsed < duration) {
             const progress = elapsed / duration;
             const scale = Math.sin(progress * Math.PI); 
-            const maxLength = 2.2; 
+            const maxLength = 2.0; 
             const currentLength = scale * maxLength;
 
             tongueMesh.current.visible = true;
             tongueMesh.current.scale.z = currentLength;
-            tongueMesh.current.position.z = 0.2 + (currentLength / 2); // Adjusted for new model mouth pos
+            
+            // Adjust tongue origin based on Camera Mode
+            if (cameraMode === 'TPS') {
+                 tongueMesh.current.position.z = 0.5 + (currentLength / 2); 
+                 tongueMesh.current.position.y = -0.1;
+            } else {
+                 // FPS: Lower and "forward" relative to camera view
+                 tongueMesh.current.position.z = 0.5 + (currentLength / 2); 
+                 tongueMesh.current.position.y = -0.2; 
+            }
+
         } else {
             tongueMesh.current.visible = false;
         }
@@ -83,18 +92,22 @@ export const Character: React.FC<CharacterProps> = ({ entity, isPlayer, attackTr
 
   const getColor = () => {
     if (isPlayer) return COLORS.PLAYER;
-    if (entity.type === EntityType.SANGLIER) return '#ef4444'; // Red
-    if (entity.type === EntityType.RAGONDIN) return '#92400e'; // Brown
-    if (entity.type === EntityType.MOUSTIQUE) return '#94a3b8'; // Gray
-    if (entity.type === EntityType.SNAKE) return '#65a30d'; // Green
+    if (entity.type === EntityType.SANGLIER) return '#ef4444'; 
+    if (entity.type === EntityType.RAGONDIN) return '#92400e'; 
+    if (entity.type === EntityType.MOUSTIQUE) return '#94a3b8'; 
+    if (entity.type === EntityType.SNAKE) return '#65a30d'; 
     return '#ffffff';
   };
 
   return (
-    <group ref={mesh} position={[entity.position.x, 0.5, entity.position.y]}>
+    <group ref={mesh} position={[entity.position.x, isPlayer ? 0.6 : 0.5, entity.position.y]}>
       
-      {isPlayer ? (
-        <MarinetteModel color={getColor()} />
+      {isPlayer && cameraMode === 'FPS' ? (
+        // In FPS, hide body
+        null 
+      ) : isPlayer ? (
+        // In TPS, show Marinette
+        <MarinetteModel color={COLORS.PLAYER} />
       ) : isMosquito ? (
         <MosquitoModel />
       ) : entity.type === EntityType.RAGONDIN ? (
@@ -112,9 +125,8 @@ export const Character: React.FC<CharacterProps> = ({ entity, isPlayer, attackTr
 
       {/* Tongue (Player Only) */}
       {isPlayer && (
-         <mesh ref={tongueMesh} position={[0, 0.2, 0]} visible={false}>
-            {/* Box of length 1 */}
-            <boxGeometry args={[0.15, 0.05, 1]} /> 
+         <mesh ref={tongueMesh} position={[0, -0.2, 0]} visible={false}>
+            <boxGeometry args={[0.1, 0.05, 1]} /> 
             <meshStandardMaterial color={COLORS.TONGUE} />
          </mesh>
       )}

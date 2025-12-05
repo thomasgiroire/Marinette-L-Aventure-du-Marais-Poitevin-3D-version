@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { Environment } from '@react-three/drei';
-import { GameState, TileType, GRID_SIZE } from '../types';
+import { GameState, TileType, GRID_SIZE, CameraMode } from '../types';
 import { COLORS } from '../constants';
 import { FollowCamera } from './game/FollowCamera';
 import { Character } from './game/Character';
@@ -11,9 +11,10 @@ interface GameSceneProps {
   gameState: GameState;
   attackTrigger?: number;
   isFacingCamera?: boolean;
+  cameraMode: CameraMode;
 }
 
-const GameScene: React.FC<GameSceneProps> = ({ gameState, attackTrigger, isFacingCamera }) => {
+const GameScene: React.FC<GameSceneProps> = ({ gameState, attackTrigger, isFacingCamera, cameraMode }) => {
   const { grid, player, enemies, items, levelExits } = gameState;
 
   // Memoize grid rendering
@@ -47,7 +48,7 @@ const GameScene: React.FC<GameSceneProps> = ({ gameState, attackTrigger, isFacin
 
   return (
     <Canvas shadows dpr={[1, 2]}>
-      <FollowCamera player={player} />
+      <FollowCamera player={player} mode={cameraMode} />
       
       <ambientLight intensity={0.7} />
       <directionalLight 
@@ -65,6 +66,7 @@ const GameScene: React.FC<GameSceneProps> = ({ gameState, attackTrigger, isFacin
             isPlayer 
             attackTrigger={attackTrigger} 
             isFacingCamera={isFacingCamera}
+            cameraMode={cameraMode}
         />
         {enemies.map(e => !e.isHidden && <Character key={e.id} entity={e} />)}
         {items.map(i => <Collectible key={i.id} position={[i.position.x, 0, i.position.y]} />)}
